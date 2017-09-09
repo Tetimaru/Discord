@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from __main__ import send_cmd_help
 from .utils import checks
 import aiohttp
 import requests
@@ -12,21 +13,27 @@ try: # check if BeautifulSoup4 is installed
 except:
     soupAvailable = False
 
-class Mycog:
-    """My custom cog that does stuff!"""
+class Test:
+    """A test cog to practice the discord API and redBot wrapper"""
     
     def __init__(self, bot):
         self.bot = bot
-        
-    @commands.command() # decorator
-    @checks.mod_or_permissions(administrator=True)
-    async def punch(self, lol : discord.Member): # call with !punch <discord.Member>
-        """Punch another user (why would you ever want to use this?)"""
-        await self.bot.say("ONE PUNCH! And " + lol.mention + " is out! ლ(ಠ益ಠლ)")
     
+
     @commands.command()
-    @checks.serverowner_or_permissions(administrator=True) 
-    async def dotanow(self):
+    async def punch(self, lol : discord.Member): # call with [p]punch <discord.Member>
+        """Incite violence with another user"""
+        await self.bot.say("ONE PUNCH! And " + lol.mention + " is out! ლ(ಠ益ಠლ)")
+
+    @commands.group(pass_context=True, no_pm=True) # @ = decorator
+    async def defaults(self, ctx):
+        """Example function calls"""
+        if ctx.invoked_subcommand is None:
+            await send_cmd_help(ctx)
+    
+    @defaults.command(name="dotanow", pass_context=True, no_pm=True)
+    @checks.mod_or_permissions(administrator=True) 
+    async def _defaults_dotanow(self):
         """Scrape the number of players on DotA2 currently"""
         url = "https://steamdb.info/app/570/graphs/" # build the web address
         async with aiohttp.get(url) as response:
@@ -70,9 +77,9 @@ class Mycog:
         df['username'] = list1
         df['discriminator'] = list2
 
-        id_pattern = r'avatars/(\d+)'
-        some_list = re.findall(id_pattern, text)
-        df['userid'] = pd.Series(some_list)
+        # id_pattern = r'avatars/(\d+)'
+        # some_list = re.findall(id_pattern, text)
+        # df['userid'] = pd.Series(some_list)
 
         # print(df)
 
@@ -87,11 +94,26 @@ class Mycog:
         some_list = re.findall(lvl_pattern, text)
         df['lvl'] = some_list
 
-        df.to_csv('data.csv', index=False)
-            
+        print(df)
+        df.to_csv('data.csv', index=False, encoding='utf-8')
+
+
+    #########################
+    #   HELPER FUNCTIONS    #
+    #########################
+
+    async def messageListener(self, message):
+        """Do something every time a message is (read) in the server/channel"""
+        if message.author.bot is True:
+            return
+
+        await self.bot.send_message(message.channel, "poi")
+
             
 def setup(bot):
     if soupAvailable:
-        bot.add_cog(Mycog(bot))
+        new_test = Test(bot)
+        bot.add_cog(new_test)
+        #bot.add_listener(new_test.messageListener, 'on_message')
     else:
         raise RuntimeError("You need to run 'pip3 install beautifulsoup4'")
